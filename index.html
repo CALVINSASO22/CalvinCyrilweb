@@ -566,6 +566,55 @@
       50%{box-shadow:0 4px 40px rgba(37,211,102,.75),0 0 0 8px rgba(37,211,102,.12);}
     }
 
+    /* ====== PORTFOLIO CTA BANNER ====== */
+    .portfolio-cta {
+      margin-top: 3rem;
+      padding: 3rem;
+      border-radius: var(--r);
+      background: linear-gradient(135deg, rgba(124,58,237,.07) 0%, rgba(0,245,255,.04) 100%);
+      border: 1px solid rgba(124,58,237,.22);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .portfolio-cta::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(0,245,255,.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .pcta-tag {
+      display: inline-flex; align-items: center; gap: .45rem;
+      font-size: .72rem; font-weight: 700; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--cyan); margin-bottom: .8rem;
+    }
+    .pcta-tag::before { content:''; display:block; width:18px; height:2px; background:var(--cyan); border-radius:2px; }
+    .pcta-title {
+      font-size: clamp(1.5rem, 3vw, 2.1rem);
+      font-weight: 700; letter-spacing: -.03em; margin-bottom: .6rem;
+      position: relative; z-index: 1;
+    }
+    .pcta-title span {
+      background: linear-gradient(120deg, var(--cyan) 0%, var(--vio2) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .pcta-sub {
+      font-family: 'Inter', sans-serif; font-size: .98rem;
+      color: var(--muted); margin-bottom: 2rem;
+      max-width: 540px; margin-left: auto; margin-right: auto;
+      position: relative; z-index: 1;
+    }
+
+    /* ADS card badge */
+    .ads-thumb { position: relative; }
+    .ads-badge {
+      position: absolute; top: 12px; right: 12px; z-index: 3;
+      background: linear-gradient(135deg, var(--violet), var(--vio3));
+      color: #fff; font-size: .66rem; font-weight: 800;
+      letter-spacing: .1em; padding: .22rem .6rem; border-radius: 5px;
+      box-shadow: 0 0 14px var(--gv); text-transform: uppercase;
+    }
+
     /* ====== DESKTOP LARGE ≥1300px ====== */
     @media(min-width:1300px) {
       .hero-inner { grid-template-columns: 1fr 420px; gap: 5rem; }
@@ -685,9 +734,8 @@
       </div>
 
       <h1 class="hero-title">
-        Tu negocio no necesita<br />
-        más clientes. Necesita un<br />
-        <span class="g">sistema que no los pierda.</span>
+        Tu negocio no necesita más clientes.<br />
+        <span class="g">Necesita un sistema que no los pierda.</span>
       </h1>
 
       <p class="hero-desc">
@@ -700,14 +748,11 @@
         <a href="#portfolio" class="btn">
           <span>🔍</span> Ver dónde estás perdiendo clientes
         </a>
-        <a href="#contacto" class="hero-link">
-          Analizar mi negocio gratis <span class="arrow">→</span>
-        </a>
       </div>
 
       <div class="hero-stats">
         <div class="stat">
-          <span class="stat-num" data-target="30">0+</span>
+          <span class="stat-num" data-target="10">0+</span>
           <span class="stat-label">Negocios con sistema activo</span>
         </div>
         <div class="stat">
@@ -834,7 +879,7 @@
         </div>
         <div class="about-badges">
           <div class="about-badge"><span class="dot-v"></span>+3 años cerrando fugas de clientes</div>
-          <div class="about-badge"><span class="dot-v"></span>30+ negocios con sistema activo</div>
+          <div class="about-badge"><span class="dot-v"></span>10+ negocios con sistema activo</div>
         </div>
         <div class="about-rrss">
           <p class="about-rrss-title">Seguime en</p>
@@ -887,6 +932,7 @@
           <div class="skill-item"><span class="sk-dot"></span>Procesos que no dependen del dueño</div>
           <div class="skill-item"><span class="sk-dot"></span>Conversiones sin intervención manual</div>
           <div class="skill-item"><span class="sk-dot"></span>Pérdidas invisibles vueltas visibles</div>
+          <div class="skill-item"><span class="sk-dot"></span>Especialista en Facebook ADS y optimización de conversión</div>
         </div>
       </div>
     </div>
@@ -979,24 +1025,34 @@
       </div>
 
       <div class="project-card domino-item" style="--i:3">
-        <div class="project-thumb">
+        <div class="project-thumb ads-thumb">
           <div class="thumb-placeholder">
-            <div class="th-icon">🎬</div>
-            <div class="th-label">CAPTURA / VIDEO DEMO 4</div>
+            <div class="th-icon">🎯</div>
+            <div class="th-label">VIDEO ADS — PENDIENTE</div>
           </div>
+          <div class="ads-badge">ADS</div>
         </div>
         <div class="project-info">
-          <p class="project-type">Fuga detectada → sistema implementado</p>
-          <h3 class="project-title">Tomaban decisiones sin datos reales. Todo dependía de la memoria del dueño.</h3>
+          <p class="project-type">Facebook & Instagram ADS</p>
+          <h3 class="project-title">¿Por qué tus ADS no convierten?</h3>
           <p class="project-desc">
-            Sin métricas claras, cada decisión era una suposición. Las fugas eran invisibles. Sistema de reportes implementado: qué clientes no volvieron, cuánto dinero se fue, dónde está el problema.
+            El problema no es la campaña ni el presupuesto. Es lo que pasa después del clic. Sin un sistema que reciba, responda y convierta cada lead en segundos, el dinero de tus ADS se va directo a la competencia.
           </p>
           <div class="project-chips">
-            <span class="project-chip">Fugas visibles</span>
-            <span class="project-chip">Decisiones con datos</span>
+            <span class="project-chip">ADS + sistema</span>
+            <span class="project-chip">Más conversiones</span>
+            <span class="project-chip">Sin leads perdidos</span>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- CTA banner post-portfolio -->
+    <div class="portfolio-cta fade-up">
+      <p class="pcta-tag">Diagnóstico gratuito</p>
+      <h3 class="pcta-title">¿Cuánto te está costando <span>no tener un sistema?</span></h3>
+      <p class="pcta-sub">En 30 minutos detectamos exactamente dónde tu negocio pierde clientes, dinero y oportunidades — aunque parezca que todo funciona bien.</p>
+      <a href="#contacto" class="btn">Detectar mis fugas →</a>
     </div>
   </div>
 </section>
