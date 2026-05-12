@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calvin Cyril — Implemento sistemas que convierten y retienen clientes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ====== RESET & VARIABLES ====== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #0a0a0f;
+      --bg2:    #0d0d1a;
+      --bg3:    #111128;
+      --cyan:   #00f5ff;
+      --violet: #7c3aed;
+      --vio2:   #a855f7;
+      --vio3:   #333399;
+      --gc:     rgba(0,245,255,.18);
+      --gv:     rgba(124,58,237,.25);
+      --text:   #e8e8f0;
+      --muted:  #8888aa;
+      --border: rgba(255,255,255,.07);
+      --card:   rgba(255,255,255,.028);
+      --r:      16px;
+      --t:      .35s cubic-bezier(.4,0,.2,1);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+    ::selection { background: var(--violet); color: #fff; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--vio3); border-radius: 3px; }
+
+    /* ====== CANVAS ====== */
+    #bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+    /* ====== NAV ====== */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 0 6vw; height: 68px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(10,10,15,.75);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      transition: background var(--t);
+    }
+    .nav-logo {
+      font-size: 1.15rem; font-weight: 700; letter-spacing: -.5px;
+      background: linear-gradient(90deg,var(--cyan),var(--vio2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none;
+      font-size: .9rem; font-weight: 500; letter-spacing: .02em;
+      transition: color var(--t);
+    }
+    .nav-links a:hover { color: var(--cyan); }
+    .nav-cta {
+      padding: .45rem 1.2rem !important;
+      border-radius: 10px !important;
+      background: linear-gradient(135deg,var(--violet),var(--vio3)) !important;
+      color: #fff !important;
+      box-shadow: 0 0 18px var(--gv) !important;
+      font-weight: 600 !important;
+    }
+    .nav-cta:hover { filter: brightness(1.15) !important; transform: translateY(-1px); box-shadow: 0 0 30px var(--gv) !important; }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
+    .hamburger span { display: block; width: 24px; height: 2px; background: var(--text); border-radius: 2px; transition: var(--t); }
+
+    /* ====== SINGLE BUTTON STYLE ====== */
+    .btn {
+      display: inline-flex; align-items: center; gap: .5rem;
+      padding: .82rem 1.9rem; border-radius: 12px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600; font-size: .95rem;
+      cursor: pointer; text-decoration: none;
+      border: none;
+      background: linear-gradient(135deg,var(--violet) 0%,var(--vio3) 100%);
+      color: #fff;
+      box-shadow: 0 0 28px var(--gv);
+      transition: var(--t);
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 48px rgba(124,58,237,.55);
+      filter: brightness(1.12);
+    }
+    .btn-sm { padding: .6rem 1.3rem; font-size: .88rem; }
+
+    /* ====== SHARED ====== */
+    section { position: relative; z-index: 1; }
+    .section-inner { max-width: 1140px; margin: 0 auto; padding: 100px 6vw; }
+    .section-tag {
+      display: inline-flex; align-items: center; gap: .45rem;
+      font-size: .72rem; font-weight: 700; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--cyan); margin-bottom: .9rem;
+    }
+    .section-tag::before {
+      content: ''; display: block; width: 18px; height: 2px;
+      background: var(--cyan); border-radius: 2px;
+    }
+    .section-title {
+      font-size: clamp(1.9rem,4vw,3rem); font-weight: 700;
+      line-height: 1.14; letter-spacing: -.03em; margin-bottom: .6rem;
+    }
+    .section-title span {
+      background: linear-gradient(120deg,var(--cyan) 0%,var(--vio2) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .section-sub {
+      color: var(--muted); font-size: 1rem; max-width: 560px;
+      margin-bottom: 3.5rem; font-family: 'Inter',sans-serif;
+    }
+    .gradient-divider {
+      height: 1px;
+      background: linear-gradient(90deg,transparent 5%,var(--violet) 40%,var(--cyan) 60%,transparent 95%);
+      opacity: .2;
+    }
+
+    /* ====== DOMINO ANIMATIONS ====== */
+    @keyframes dominoFall {
+      0%   { opacity:0; transform: perspective(700px) rotateX(-30deg) translateY(50px) scale(.97); }
+      65%  { opacity:1; transform: perspective(700px) rotateX(4deg)   translateY(-4px) scale(1); }
+      100% { opacity:1; transform: perspective(700px) rotateX(0)       translateY(0)    scale(1); }
+    }
+    .domino-item { opacity: 0; }
+    .domino-item.dom-in {
+      animation: dominoFall .6s cubic-bezier(.34,1.2,.64,1) forwards;
+    }
+
+    /* fade-up for non-card elements */
+    .fade-up { opacity:0; transform:translateY(28px); transition: opacity .7s ease, transform .7s ease; }
+    .fade-up.visible { opacity:1; transform:translateY(0); }
+
+    /* ====== ICON ANIMATIONS ====== */
+    @keyframes iSpin   { to { transform: rotate(360deg); } }
+    @keyframes iBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+    @keyframes iGlow   { 0%,100%{box-shadow:0 0 10px var(--gc)} 50%{box-shadow:0 0 28px var(--gc),0 0 50px rgba(0,245,255,.15)} }
+    @keyframes iPulse  { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
+    @keyframes iFloat  { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-5px) rotate(8deg)} }
+    @keyframes iPing   { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.12);opacity:.85} }
+
+    .i-spin  { animation: iSpin   9s linear         infinite; }
+    .i-bounce{ animation: iBounce 2.4s ease-in-out  infinite; }
+    .i-glow  { animation: iGlow   2.2s ease-in-out  infinite; }
+    .i-pulse { animation: iPulse  2s ease-in-out    infinite; }
+    .i-float { animation: iFloat  3.2s ease-in-out  infinite; }
+    .i-ping  { animation: iPing   2.8s ease-in-out  infinite; }
+
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+
+    /* ====== HERO ====== */
+    #hero {
+      min-height: 100vh; display: flex; align-items: center;
+      padding-top: 68px; overflow: hidden;
+    }
+    .hero-inner {
+      max-width: 1140px; margin: 0 auto; padding: 60px 6vw 80px;
+      display: grid; grid-template-columns: 1fr 480px;
+      gap: 4rem; align-items: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: .5rem;
+      padding: .35rem 1rem; border-radius: 50px;
+      background: rgba(0,245,255,.07);
+      border: 1px solid rgba(0,245,255,.2);
+      color: var(--cyan); font-size: .78rem; font-weight: 600;
+      letter-spacing: .08em; margin-bottom: 1.5rem;
+    }
+    .hero-badge .dot { width:7px;height:7px;border-radius:50%;background:var(--cyan);animation:pulse 2s infinite; }
+
+    .hero-title {
+      font-size: clamp(2.2rem, 5.5vw, 4rem);
+      font-weight: 700; line-height: 1.1;
+      letter-spacing: -.04em; margin-bottom: 1.2rem;
+    }
+    .hero-title .g {
+      background: linear-gradient(135deg,var(--cyan) 0%,var(--vio2) 60%,#ff6bff 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero-desc {
+      font-family: 'Inter',sans-serif; font-size: 1.08rem;
+      color: var(--muted); line-height: 1.75;
+      margin-bottom: 2.2rem; max-width: 490px;
+    }
+    .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 3rem; }
+
+    /* Hero secondary link */
+    .hero-link {
+      display: inline-flex; align-items: center; gap: .4rem;
+      color: var(--muted); font-size: .92rem; font-weight: 500;
+      text-decoration: none; transition: color var(--t);
+      align-self: center;
+    }
+    .hero-link:hover { color: var(--cyan); }
+    .hero-link .arrow { font-size: 1rem; transition: transform var(--t); }
+    .hero-link:hover .arrow { transform: translateX(4px); }
+
+    .hero-stats { display: flex; gap: 2rem; flex-wrap: wrap; }
+    .stat { display: flex; flex-direction: column; gap: .15rem; }
+    .stat-num {
+      font-size: 1.8rem; font-weight: 700;
+      background: linear-gradient(90deg,var(--cyan),var(--vio2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      letter-spacing: -.04em;
+    }
+    .stat-label { font-size: .76rem; color: var(--muted); font-weight: 500; letter-spacing: .04em; }
+
+    /* VSL video placeholder */
+    .hero-vsl-wrap { position: relative; }
+    .hero-vsl-frame {
+      position: relative; border-radius: 20px; overflow: hidden;
+      aspect-ratio: 9/16;
+      background: linear-gradient(145deg,var(--bg3) 0%,#1a0d2e 100%);
+      border: 1px solid rgba(124,58,237,.3);
+      box-shadow: 0 0 70px rgba(124,58,237,.22), 0 0 140px rgba(0,245,255,.05);
+    }
+    .vsl-inner {
+      width:100%; height:100%; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:1.2rem;
+      position:relative; z-index:1;
+    }
+    .vsl-play-btn {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: linear-gradient(135deg,var(--violet),var(--vio3));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem; box-shadow: 0 0 40px var(--gv);
+      cursor: pointer; transition: var(--t);
+    }
+    .vsl-play-btn:hover { transform: scale(1.1); box-shadow: 0 0 60px rgba(124,58,237,.6); }
+    .vsl-label {
+      font-size: .72rem; font-weight: 700; letter-spacing: .12em;
+      color: rgba(124,58,237,.6); text-align: center; padding: .4rem .9rem;
+      border: 1px dashed rgba(124,58,237,.35); border-radius: 7px;
+      background: rgba(124,58,237,.06);
+    }
+    .vsl-scan {
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg,transparent,var(--cyan),transparent);
+      animation: vslScan 3s linear infinite;
+    }
+    @keyframes vslScan {
+      0%   { top: 0;    opacity: .7; }
+      100% { top: 100%; opacity: 0; }
+    }
+    .vsl-corner {
+      position: absolute; width: 20px; height: 20px;
+      border-color: var(--cyan); border-style: solid; opacity: .5;
+    }
+    .vsl-corner.tl { top:12px;left:12px;  border-width:2px 0 0 2px; }
+    .vsl-corner.tr { top:12px;right:12px; border-width:2px 2px 0 0; }
+    .vsl-corner.bl { bottom:12px;left:12px;  border-width:0 0 2px 2px; }
+    .vsl-corner.br { bottom:12px;right:12px; border-width:0 2px 2px 0; }
+
+    .hero-deco { position:absolute; border-radius:50%; filter:blur(60px); pointer-events:none; }
+    .hero-deco-1 { width:280px;height:280px;background:rgba(124,58,237,.2);top:-80px;right:-70px; }
+    .hero-deco-2 { width:180px;height:180px;background:rgba(0,245,255,.1);bottom:-40px;left:-50px; }
+
+    .floating-card {
+      position: absolute;
+      background: rgba(13,13,30,.92);
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: .6rem 1rem; display: flex; align-items: center; gap: .6rem;
+      font-size: .8rem; font-weight: 500; backdrop-filter: blur(10px);
+      white-space: nowrap; animation: float 4s ease-in-out infinite; z-index: 2;
+    }
+    .floating-card.c1 { bottom:28px;left:-28px;animation-delay:0s; }
+    .floating-card.c2 { top:36px;right:-16px;animation-delay:2s; }
+    .fc-icon { width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.9rem; }
+
+    /* ====== SERVICES ====== */
+    #servicios { background: var(--bg); }
+    .services-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 1.5rem; perspective: 1200px; }
+
+    .service-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 2rem;
+      transition: border-color var(--t), transform var(--t), box-shadow var(--t);
+      position: relative; overflow: hidden; cursor: default;
+    }
+    .service-card::before {
+      content:''; position:absolute; inset:0;
+      background:linear-gradient(135deg,var(--gc) 0%,var(--gv) 100%);
+      opacity:0; transition:opacity var(--t);
+    }
+    .service-card:hover { border-color:rgba(0,245,255,.25); transform:translateY(-5px); box-shadow:0 12px 40px rgba(0,245,255,.08); }
+    .service-card:hover::before { opacity:1; }
+
+    .svc-icon {
+      width:54px;height:54px;border-radius:14px;
+      background:linear-gradient(135deg,rgba(0,245,255,.1),rgba(124,58,237,.1));
+      border:1px solid rgba(0,245,255,.14);
+      display:flex;align-items:center;justify-content:center;font-size:1.55rem;
+      margin-bottom:1.2rem; position:relative; z-index:1;
+    }
+    .svc-title { font-size:1.1rem;font-weight:700;margin-bottom:.5rem;position:relative;z-index:1; }
+    .svc-desc { font-family:'Inter',sans-serif;font-size:.88rem;color:var(--muted);line-height:1.68;position:relative;z-index:1; }
+    .svc-tags { display:flex;flex-wrap:wrap;gap:.4rem;margin-top:1.1rem;position:relative;z-index:1; }
+    .svc-tag {
+      padding:.18rem .6rem;border-radius:50px;
+      background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.2);
+      color:var(--vio2);font-size:.7rem;font-weight:600;letter-spacing:.04em;
+    }
+
+    /* ====== ABOUT ====== */
+    #sobre-mi { background: var(--bg2); }
+    .about-wrap { max-width:1140px;margin:0 auto;padding:100px 6vw; }
+    .about-top {
+      display: grid; grid-template-columns: 340px 1fr;
+      gap: 4.5rem; align-items: start; margin-bottom: 3.5rem;
+    }
+    .about-photo-col { position: relative; }
+    .about-photo-frame {
+      border-radius: 18px; overflow: hidden; aspect-ratio: 4/5;
+      background: var(--bg3); border: 1px solid var(--border);
+      box-shadow: 0 0 50px rgba(0,245,255,.07);
+    }
+    .photo-placeholder {
+      width:100%;height:100%;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:1rem;color:var(--muted);
+      font-family:'Inter',sans-serif;
+    }
+    .ph-icon {
+      width:76px;height:76px;border-radius:50%;
+      background:rgba(124,58,237,.12);border:2px dashed rgba(124,58,237,.4);
+      display:flex;align-items:center;justify-content:center;font-size:2rem;
+    }
+    .ph-label {
+      font-size:.75rem;font-weight:700;letter-spacing:.1em;
+      color:rgba(124,58,237,.65);text-align:center;padding:.38rem .75rem;
+      border:1px solid rgba(124,58,237,.28);border-radius:6px;
+      background:rgba(124,58,237,.06);
+    }
+
+    /* RRSS */
+    .about-rrss { display:flex;flex-direction:column;gap:.6rem;margin-top:1.2rem; }
+    .about-rrss-title { font-size:.72rem;font-weight:700;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:.2rem; }
+    .rrss-row { display:flex;gap:.6rem;flex-wrap:wrap; }
+    .rrss-btn {
+      display:inline-flex;align-items:center;gap:.45rem;
+      padding:.42rem .95rem;border-radius:9px;
+      background:rgba(255,255,255,.04);border:1px solid var(--border);
+      color:var(--muted);font-size:.8rem;font-weight:600;
+      text-decoration:none;transition:var(--t);
+    }
+    .rrss-btn:hover { border-color:var(--cyan);color:var(--cyan);background:rgba(0,245,255,.07);box-shadow:0 0 14px var(--gc); }
+    .rrss-btn svg { width:14px;height:14px;fill:currentColor;flex-shrink:0; }
+
+    /* About content */
+    .about-content {}
+    .about-text { font-family:'Inter',sans-serif;font-size:.98rem;color:var(--muted);line-height:1.78;margin-bottom:1.1rem; }
+    .about-text strong { color:var(--text);font-family:'Space Grotesk',sans-serif; }
+    .skills-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:.7rem;margin-top:2rem; }
+    .skill-item { display:flex;align-items:center;gap:.6rem;font-size:.88rem;font-weight:500;color:var(--muted); }
+    .sk-dot { width:6px;height:6px;border-radius:50%;background:var(--cyan);flex-shrink:0; }
+
+    /* About video */
+    .about-video-wrap { width:100%; }
+    .about-video-frame {
+      border-radius: 18px; overflow:hidden;
+      aspect-ratio: 16/9;
+      background: linear-gradient(145deg,var(--bg3),#1a0d2e);
+      border: 1px solid rgba(124,58,237,.28);
+      box-shadow: 0 0 60px rgba(124,58,237,.12);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:1rem;position:relative;
+    }
+    .about-video-frame .vsl-scan { top:0; }
+    .about-video-frame .vsl-play-btn { width:62px;height:62px;font-size:1.4rem; }
+    .about-video-label {
+      font-size:.72rem;font-weight:700;letter-spacing:.12em;
+      color:rgba(124,58,237,.6);text-align:center;padding:.38rem .85rem;
+      border:1px dashed rgba(124,58,237,.35);border-radius:7px;
+      background:rgba(124,58,237,.06);
+    }
+    .av-corner { position:absolute;width:18px;height:18px;border-color:var(--cyan);border-style:solid;opacity:.45; }
+    .av-corner.tl{top:12px;left:12px;border-width:2px 0 0 2px;}
+    .av-corner.tr{top:12px;right:12px;border-width:2px 2px 0 0;}
+    .av-corner.bl{bottom:12px;left:12px;border-width:0 0 2px 2px;}
+    .av-corner.br{bottom:12px;right:12px;border-width:0 2px 2px 0;}
+
+    /* About badges */
+    .about-badges { display:flex;flex-direction:column;gap:.6rem;margin-top:1rem; }
+    .about-badge {
+      background:rgba(10,10,20,.95);border:1px solid var(--border);
+      border-radius:10px;padding:.5rem .9rem;font-size:.76rem;font-weight:600;
+      display:flex;align-items:center;gap:.5rem;backdrop-filter:blur(10px);
+    }
+    .dot-v { width:7px;height:7px;border-radius:50%;background:var(--vio2);box-shadow:0 0 8px var(--vio2); }
+
+    /* ====== PORTFOLIO ====== */
+    #portfolio { background: var(--bg); }
+    .portfolio-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;perspective:1200px; }
+    .project-card {
+      background:var(--card);border:1px solid var(--border);
+      border-radius:var(--r);overflow:hidden;transition:var(--t);
+    }
+    .project-card:hover { border-color:rgba(124,58,237,.3);transform:translateY(-5px);box-shadow:0 14px 48px rgba(124,58,237,.1); }
+    .project-thumb {
+      aspect-ratio:16/9;background:var(--bg3);
+      display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
+    }
+    .project-thumb::after {
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(180deg,transparent 40%,rgba(10,10,15,.9) 100%);
+    }
+    .thumb-placeholder { display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;color:var(--muted);width:100%;height:100%; }
+    .th-icon { font-size:2.4rem;opacity:.35; }
+    .th-label { font-size:.7rem;font-weight:700;letter-spacing:.1em;color:rgba(124,58,237,.5);border:1px dashed rgba(124,58,237,.28);padding:.28rem .65rem;border-radius:5px; }
+    .project-info { padding:1.3rem 1.5rem; }
+    .project-type { font-size:.7rem;font-weight:700;letter-spacing:.1em;color:var(--cyan);text-transform:uppercase;margin-bottom:.35rem; }
+    .project-title { font-size:1.02rem;font-weight:700;margin-bottom:.38rem; }
+    .project-desc { font-family:'Inter',sans-serif;font-size:.83rem;color:var(--muted);line-height:1.62; }
+    .project-chips { display:flex;flex-wrap:wrap;gap:.38rem;margin-top:.9rem; }
+    .project-chip {
+      padding:.16rem .55rem;border-radius:50px;
+      background:rgba(0,245,255,.07);border:1px solid rgba(0,245,255,.14);
+      color:var(--cyan);font-size:.68rem;font-weight:600;
+    }
+
+    /* ====== TESTIMONIALS CAROUSEL ====== */
+    #testimonios { background: var(--bg2); }
+    .testi-carousel-wrap { position:relative; }
+    .testi-viewport { overflow:hidden;border-radius:var(--r); }
+    .testi-track {
+      display:flex;
+      transition: transform .55s cubic-bezier(.4,0,.2,1);
+    }
+    .testi-card {
+      flex: 0 0 100%; min-width:0;
+      background:var(--card);border:1px solid var(--border);
+      border-radius:var(--r);padding:2.2rem;
+    }
+    .testi-quote {
+      font-size:2.8rem;line-height:1;
+      background:linear-gradient(135deg,var(--cyan),var(--vio2));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+      margin-bottom:.8rem;font-family:Georgia,serif;
+    }
+    .testi-text { font-family:'Inter',sans-serif;font-size:.96rem;color:var(--muted);line-height:1.75;margin-bottom:1.6rem; }
+    .testi-footer { display:flex;align-items:center;gap:.9rem; }
+    .testi-avatar {
+      width:46px;height:46px;border-radius:50%;background:var(--bg3);
+      border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+      font-size:1.4rem;flex-shrink:0;
+    }
+    .testi-name { font-size:.9rem;font-weight:700; }
+    .testi-role { font-size:.76rem;color:var(--muted);font-family:'Inter',sans-serif; }
+    .testi-stars { margin-left:auto;color:#fbbf24;font-size:.9rem;letter-spacing:.05em; }
+
+    .testi-controls {
+      display:flex;align-items:center;justify-content:center;gap:1rem;margin-top:1.8rem;
+    }
+    .testi-arrow {
+      width:44px;height:44px;border-radius:50%;
+      background:var(--card);border:1px solid var(--border);
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;font-size:1.1rem;color:var(--muted);
+      transition:var(--t);
+      background: linear-gradient(135deg,var(--violet),var(--vio3));
+      color:#fff;border:none;box-shadow:0 0 18px var(--gv);
+    }
+    .testi-arrow:hover { transform:scale(1.1);box-shadow:0 0 32px rgba(124,58,237,.5); }
+    .testi-dots { display:flex;gap:.5rem; }
+    .testi-dot {
+      width:8px;height:8px;border-radius:50%;background:var(--border);
+      cursor:pointer;transition:var(--t);border:none;
+    }
+    .testi-dot.active { background:var(--cyan);box-shadow:0 0 10px var(--gc); }
+
+    /* ====== CONTACT ====== */
+    #contacto { background: var(--bg); }
+    .contact-inner {
+      max-width:1140px;margin:0 auto;padding:100px 6vw;
+      display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:start;
+    }
+    .contact-item { display:flex;align-items:center;gap:.8rem;color:var(--muted);font-family:'Inter',sans-serif;font-size:.9rem;margin-bottom:.9rem; }
+    .ci-icon {
+      width:36px;height:36px;border-radius:8px;
+      background:rgba(0,245,255,.07);border:1px solid rgba(0,245,255,.12);
+      display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;
+    }
+    .calendly-box {
+      margin-top:2rem;padding:1.5rem;border-radius:var(--r);
+      border:1px solid rgba(124,58,237,.25);background:rgba(124,58,237,.05);
+    }
+    .calendly-box h4 { font-size:1rem;font-weight:700;margin-bottom:.5rem; }
+    .calendly-box p { font-size:.86rem;color:var(--muted);font-family:'Inter',sans-serif;margin-bottom:1rem;line-height:1.62; }
+
+    /* Contact form */
+    .contact-form { display:flex;flex-direction:column;gap:1rem; }
+    .form-group { display:flex;flex-direction:column;gap:.38rem; }
+    .form-group label { font-size:.8rem;font-weight:700;color:var(--muted);letter-spacing:.04em; }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      background:rgba(255,255,255,.04);border:1px solid var(--border);
+      border-radius:10px;padding:.75rem 1rem;color:var(--text);
+      font-family:'Inter',sans-serif;font-size:.9rem;outline:none;
+      transition:border-color var(--t),box-shadow var(--t);-webkit-appearance:none;
+    }
+    .form-group select option { background:var(--bg2); }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      border-color:rgba(0,245,255,.38);box-shadow:0 0 0 3px rgba(0,245,255,.08);
+    }
+    .form-group textarea { resize:vertical;min-height:128px; }
+    .form-row { display:grid;grid-template-columns:1fr 1fr;gap:1rem; }
+    .form-submit { display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin-top:.4rem; }
+    .form-note { font-family:'Inter',sans-serif;font-size:.76rem;color:var(--muted); }
+
+    /* ====== FOOTER ====== */
+    footer {
+      position:relative;z-index:1;
+      background:var(--bg2);border-top:1px solid var(--border);
+      padding:2.5rem 6vw;
+    }
+    .footer-inner {
+      max-width:1140px;margin:0 auto;
+      display:flex;justify-content:space-between;align-items:center;gap:2rem;flex-wrap:wrap;
+    }
+    .footer-logo {
+      font-size:1.1rem;font-weight:700;
+      background:linear-gradient(90deg,var(--cyan),var(--vio2));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+    .footer-copy { font-family:'Inter',sans-serif;font-size:.8rem;color:var(--muted);text-align:center; }
+    .footer-socials { display:flex;gap:.7rem; }
+    .social-btn {
+      width:36px;height:36px;border-radius:9px;
+      background:var(--card);border:1px solid var(--border);
+      display:flex;align-items:center;justify-content:center;
+      text-decoration:none;color:var(--muted);transition:var(--t);
+    }
+    .social-btn svg { width:15px;height:15px;fill:currentColor; }
+    .social-btn:hover { border-color:rgba(0,245,255,.3);color:var(--cyan);box-shadow:0 0 14px var(--gc);transform:translateY(-2px); }
+
+    /* ====== WHATSAPP FLOAT ====== */
+    .wa-float {
+      position:fixed;bottom:24px;right:24px;z-index:999;
+      width:58px;height:58px;border-radius:50%;
+      background:#25D366;
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 4px 24px rgba(37,211,102,.45);
+      text-decoration:none;transition:var(--t);
+      animation: waPulse 2.5s ease-in-out infinite;
+    }
+    .wa-float svg { width:30px;height:30px;fill:#fff; }
+    .wa-float:hover { transform:scale(1.12);box-shadow:0 6px 36px rgba(37,211,102,.65); animation:none; }
+    @keyframes waPulse {
+      0%,100%{box-shadow:0 4px 24px rgba(37,211,102,.45);}
+      50%{box-shadow:0 4px 40px rgba(37,211,102,.75),0 0 0 8px rgba(37,211,102,.12);}
+    }
+
+    /* ====== DESKTOP LARGE ≥1300px ====== */
+    @media(min-width:1300px) {
+      .hero-inner { grid-template-columns: 1fr 420px; gap: 5rem; }
+      .hero-vsl-frame { height: clamp(500px, 56vh, 620px); }
+    }
+
+    /* ====== DESKTOP BASE 901px – 1299px ====== */
+    @media(min-width:901px) {
+      /* VSL: drop 9/16 portrait, use fixed viewport-relative height */
+      .hero-inner {
+        grid-template-columns: 1fr 360px;
+        gap: 4rem;
+        min-height: calc(100vh - 68px);
+        align-items: center;
+      }
+      .hero-vsl-frame {
+        aspect-ratio: unset;
+        height: clamp(440px, 54vh, 580px);
+        width: 100%;
+      }
+      /* Floating cards: keep inside the visible hero area */
+      .floating-card.c2 { right: 8px; }
+      /* Services: always 3 cols on desktop */
+      .services-grid { grid-template-columns: repeat(3,1fr); }
+      /* Portfolio: 2×2 grid (4 cards) */
+      .portfolio-grid { grid-template-columns: repeat(2,1fr); }
+      /* Testimonials: wider cards look better slightly constrained */
+      .testi-card { padding: 2.5rem 3rem; }
+      /* About: slightly tighter column */
+      .about-top { grid-template-columns: 320px 1fr; gap: 4rem; }
+    }
+
+    /* ====== TABLET 701px – 900px ====== */
+    @media(max-width:900px) {
+      .hero-inner {
+        grid-template-columns: 1fr;
+        padding: 50px 6vw 70px;
+        gap: 3rem;
+      }
+      .hero-content { order: 1; }
+      .hero-vsl-wrap { order: 2; max-width: 360px; margin: 0 auto; }
+      .about-top { grid-template-columns: 1fr; gap: 2.5rem; }
+      .about-photo-col { max-width: 300px; margin: 0 auto; }
+      .contact-inner { grid-template-columns: 1fr; gap: 3rem; }
+      .section-inner { padding: 80px 6vw; }
+      .about-wrap { padding: 80px 6vw; }
+      .services-grid { grid-template-columns: repeat(2,1fr); }
+      .portfolio-grid { grid-template-columns: repeat(2,1fr); }
+    }
+
+    /* ====== MOBILE ≤700px ====== */
+    @media(max-width:700px) {
+      .nav-links { display:none; }
+      .nav-links.open {
+        display:flex; flex-direction:column;
+        position:fixed; top:68px; left:0; right:0;
+        background:rgba(10,10,15,.97); border-bottom:1px solid var(--border);
+        padding:1.5rem 6vw 2rem; gap:1.2rem;
+        backdrop-filter:blur(20px); z-index:99;
+      }
+      .hamburger { display:flex; }
+      .hero-inner { padding: 44px 5vw 60px; gap: 2.5rem; }
+      .hero-title { font-size: 1.95rem; line-height: 1.15; }
+      .hero-desc { font-size: 1rem; }
+      .hero-stats { gap: 1.4rem; flex-wrap: wrap; }
+      .stat-num { font-size: 1.55rem; }
+      .hero-actions { flex-direction: column; align-items: flex-start; gap: .85rem; }
+      .hero-vsl-wrap { max-width: 300px; margin: 0 auto; }
+      .section-title { font-size: 1.75rem; }
+      .section-inner { padding: 70px 5vw; }
+      .about-wrap { padding: 70px 5vw; }
+      .contact-inner { padding: 70px 5vw; }
+      .form-row { grid-template-columns: 1fr; }
+      .skills-grid { grid-template-columns: 1fr; }
+      .services-grid { grid-template-columns: 1fr; }
+      .portfolio-grid { grid-template-columns: 1fr; }
+      .testi-card { padding: 1.6rem; }
+      .about-top { gap: 2rem; }
+      .about-photo-col { max-width: 260px; margin: 0 auto; }
+      .footer-inner { flex-direction: column; align-items: center; text-align: center; gap: 1.2rem; }
+    }
+
+    /* ====== VERY SMALL ≤380px ====== */
+    @media(max-width:380px) {
+      .hero-title { font-size: 1.7rem; }
+      .btn { padding: .72rem 1.4rem; font-size: .88rem; }
+      .hero-badge { font-size: .7rem; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- ====== NAV ====== -->
+<nav id="navbar">
+  <span class="nav-logo">Calvin Cyril</span>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="#servicios">Servicios</a></li>
+    <li><a href="#sobre-mi">Sobre mí</a></li>
+    <li><a href="#portfolio">Portfolio</a></li>
+    <li><a href="#testimonios">Testimonios</a></li>
+    <li><a href="#contacto" class="nav-cta">Agendar llamada</a></li>
+  </ul>
+  <div class="hamburger" id="hamburger">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<!-- ====== HERO ====== -->
+<section id="hero">
+  <div class="hero-inner">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        Especialista en sistemas de conversión y seguimiento
+      </div>
+
+      <h1 class="hero-title">
+        Tu negocio no necesita<br />
+        más clientes. Necesita un<br />
+        <span class="g">sistema que no los pierda.</span>
+      </h1>
+
+      <p class="hero-desc">
+        Cada día sin sistema es dinero que se va sin que lo veas. Leads sin seguimiento,
+        turnos vacíos, clientes que no vuelven — y ninguna de esas pérdidas aparece
+        en tu planilla de fin de mes.
+      </p>
+
+      <div class="hero-actions">
+        <a href="#portfolio" class="btn">
+          <span>🔍</span> Ver dónde estás perdiendo clientes
+        </a>
+        <a href="#contacto" class="hero-link">
+          Analizar mi negocio gratis <span class="arrow">→</span>
+        </a>
+      </div>
+
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-num" data-target="30">0+</span>
+          <span class="stat-label">Negocios con sistema activo</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num" data-target="68">0%</span>
+          <span class="stat-label">Menos ausencias en promedio</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num" data-target="3">0x</span>
+          <span class="stat-label">Más conversiones por seguimiento</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- VSL Video placeholder -->
+    <div class="hero-vsl-wrap">
+      <div class="hero-deco hero-deco-1"></div>
+      <div class="hero-deco hero-deco-2"></div>
+      <div class="hero-vsl-frame">
+        <div class="vsl-scan"></div>
+        <div class="vsl-corner tl"></div>
+        <div class="vsl-corner tr"></div>
+        <div class="vsl-corner bl"></div>
+        <div class="vsl-corner br"></div>
+        <div class="vsl-inner">
+          <div class="vsl-play-btn">▶</div>
+          <div class="vsl-label">VIDEO VSL — PENDIENTE DE GRABACIÓN</div>
+        </div>
+      </div>
+      <div class="floating-card c1">
+        <div class="fc-icon" style="background:rgba(0,245,255,.1)">⚡</div>
+        <span>Fugas detectadas y cerradas</span>
+      </div>
+      <div class="floating-card c2">
+        <div class="fc-icon" style="background:rgba(124,58,237,.1)">📉</div>
+        <span>Clientes perdidos: 0</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="gradient-divider"></div>
+
+<!-- ====== SERVICIOS ====== -->
+<section id="servicios">
+  <div class="section-inner">
+    <p class="section-tag fade-up">Dónde se filtra el dinero</p>
+    <h2 class="section-title fade-up">Cada proceso roto es dinero <span>que no ves</span></h2>
+    <p class="section-sub fade-up">
+      La mayoría de los negocios no pierden clientes por falta de marketing.
+      Los pierden por falta de sistema — y eso cuesta mucho más de lo que parece.
+    </p>
+
+    <div class="services-grid" id="svc-grid">
+      <div class="service-card domino-item" style="--i:0">
+        <div class="svc-icon i-spin">🔗</div>
+        <h3 class="svc-title">Si vos no estás, el negocio se frena</h3>
+        <p class="svc-desc">
+          Cada proceso que depende de tu presencia es una fuga que crece sin que lo notes. Un sistema conectado cierra esas fugas antes de que cuesten.
+        </p>
+        <div class="svc-tags"><span class="svc-tag">Sin dependencia</span><span class="svc-tag">0 fugas invisibles</span></div>
+      </div>
+
+      <div class="service-card domino-item" style="--i:1">
+        <div class="svc-icon i-bounce">📅</div>
+        <h3 class="svc-title">Cada turno vacío es dinero ya gastado</h3>
+        <p class="svc-desc">
+          Ya pagaste por ese espacio. Si quedó vacío no es mala suerte — es falta de seguimiento. El sistema confirma, recuerda y recupera cada turno perdido.
+        </p>
+        <div class="svc-tags"><span class="svc-tag">Menos ausencias</span><span class="svc-tag">Ingresos recuperados</span></div>
+      </div>
+
+      <div class="service-card domino-item" style="--i:2">
+        <div class="svc-icon i-glow">🧠</div>
+        <h3 class="svc-title">Responder tarde es perder ese cliente para siempre</h3>
+        <p class="svc-desc">
+          Cada hora sin respuesta es una ventana donde el cliente se fue con la competencia. La conversación que no iniciaste a tiempo ya la perdiste.
+        </p>
+        <div class="svc-tags"><span class="svc-tag">Respuesta inmediata</span><span class="svc-tag">0 leads perdidos</span></div>
+      </div>
+
+      <div class="service-card domino-item" style="--i:3">
+        <div class="svc-icon i-pulse">💅</div>
+        <h3 class="svc-title">El cliente que no seguiste ya es cliente de otro</h3>
+        <p class="svc-desc">
+          Conseguiste ese cliente, lo atendiste, lo dejaste ir — y nunca lo contactaste de nuevo. Eso no es pérdida de marketing: es pérdida de proceso.
+        </p>
+        <div class="svc-tags"><span class="svc-tag">Seguimiento activo</span><span class="svc-tag">Clientes recuperados</span></div>
+      </div>
+
+      <div class="service-card domino-item" style="--i:4">
+        <div class="svc-icon i-ping">📊</div>
+        <h3 class="svc-title">Sin datos reales, perdés sin saber que perdés</h3>
+        <p class="svc-desc">
+          Las pérdidas invisibles son las más caras porque nunca aparecen en ninguna factura. Un sistema de métricas muestra exactamente dónde se filtra el dinero.
+        </p>
+        <div class="svc-tags"><span class="svc-tag">Fugas visibles</span><span class="svc-tag">Decisiones con datos</span></div>
+      </div>
+
+      <div class="service-card domino-item" style="--i:5">
+        <div class="svc-icon i-float">🚀</div>
+        <h3 class="svc-title">Un sistema abandonado cuesta más que no tener ninguno</h3>
+        <p class="svc-desc">
+          La diferencia entre un sistema que convierte y uno que falla está en el seguimiento y la mejora continua. No entregamos una solución — construimos un proceso.
+        </p>
+        <div class="svc-tags"><span class="svc-tag">Proceso vivo</span><span class="svc-tag">Mejora continua</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="gradient-divider"></div>
+
+<!-- ====== SOBRE MÍ ====== -->
+<section id="sobre-mi">
+  <div class="about-wrap">
+    <div class="about-top">
+      <!-- Photo + RRSS -->
+      <div class="about-photo-col fade-up">
+        <div class="about-photo-frame">
+          <div class="photo-placeholder">
+            <div class="ph-icon">👤</div>
+            <div class="ph-label">FOTO_CALVIN_2</div>
+          </div>
+        </div>
+        <div class="about-badges">
+          <div class="about-badge"><span class="dot-v"></span>+3 años cerrando fugas de clientes</div>
+          <div class="about-badge"><span class="dot-v"></span>30+ negocios con sistema activo</div>
+        </div>
+        <div class="about-rrss">
+          <p class="about-rrss-title">Seguime en</p>
+          <div class="rrss-row">
+            <a href="#" class="rrss-btn" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+              LinkedIn
+            </a>
+            <a href="#" class="rrss-btn" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+              Instagram
+            </a>
+            <a href="#" class="rrss-btn" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+              TikTok
+            </a>
+            <a href="#" class="rrss-btn" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              YouTube
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="about-content fade-up">
+        <p class="section-tag">Quién soy</p>
+        <h2 class="section-title">Hola, soy <span>Calvin Cyril</span></h2>
+
+        <p class="about-text">
+          Ayudo a <strong>negocios que dependen de atención, agenda y seguimiento</strong> a dejar de perder clientes
+          por desorden operativo. No importa si vendés servicios estéticos, médicos, educativos o cualquier cosa
+          que requiera conversación y proceso — si hay fuga, hay solución.
+        </p>
+        <p class="about-text">
+          Descubrí que la mayoría de los dueños trabajan más horas de las que deberían — y aun así
+          los clientes se pierden, los turnos quedan vacíos y el seguimiento nunca pasa.
+          <strong>El problema no es dedicación. Es falta de sistema.</strong>
+        </p>
+        <p class="about-text">
+          Mi trabajo es detectar exactamente dónde se filtran los clientes y el dinero, y construir
+          el proceso que cierra esas fugas — sin que tengas que entender de tecnología ni cambiar
+          cómo trabajás hoy.
+        </p>
+
+        <div class="skills-grid">
+          <div class="skill-item"><span class="sk-dot"></span>Seguimientos que recuperan clientes perdidos</div>
+          <div class="skill-item"><span class="sk-dot"></span>Turnos vacíos convertidos en ingresos</div>
+          <div class="skill-item"><span class="sk-dot"></span>Fugas detectadas antes de que cuesten</div>
+          <div class="skill-item"><span class="sk-dot"></span>Procesos que no dependen del dueño</div>
+          <div class="skill-item"><span class="sk-dot"></span>Conversiones sin intervención manual</div>
+          <div class="skill-item"><span class="sk-dot"></span>Pérdidas invisibles vueltas visibles</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video sobre mí -->
+    <div class="about-video-wrap fade-up">
+      <div class="about-video-frame">
+        <div class="vsl-scan"></div>
+        <div class="av-corner tl"></div>
+        <div class="av-corner tr"></div>
+        <div class="av-corner bl"></div>
+        <div class="av-corner br"></div>
+        <div class="vsl-play-btn">▶</div>
+        <div class="about-video-label">VIDEO SOBRE MÍ — PENDIENTE DE GRABACIÓN</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="gradient-divider"></div>
+
+<!-- ====== PORTFOLIO ====== -->
+<section id="portfolio">
+  <div class="section-inner">
+    <p class="section-tag fade-up">Casos reales</p>
+    <h2 class="section-title fade-up">El problema primero. <span>El resultado después.</span></h2>
+    <p class="section-sub fade-up">
+      Negocios reales que tenían fugas reales — y cerraron cada una con un sistema.
+    </p>
+
+    <div class="portfolio-grid" id="port-grid">
+      <div class="project-card domino-item" style="--i:0">
+        <div class="project-thumb">
+          <div class="thumb-placeholder">
+            <div class="th-icon">🎬</div>
+            <div class="th-label">CAPTURA / VIDEO DEMO 1</div>
+          </div>
+        </div>
+        <div class="project-info">
+          <p class="project-type">Fuga detectada → sistema implementado</p>
+          <h3 class="project-title">El problema no era la agenda. Era que nadie confirmaba los turnos.</h3>
+          <p class="project-desc">
+            8 turnos vacíos por semana. No por falta de clientes — por falta de proceso de confirmación. Sistema de seguimiento implementado: de 8 ausencias a 2 en el primer mes.
+          </p>
+          <div class="project-chips">
+            <span class="project-chip">-68% ausencias</span>
+            <span class="project-chip">Proceso cerrado</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="project-card domino-item" style="--i:1">
+        <div class="project-thumb">
+          <div class="thumb-placeholder">
+            <div class="th-icon">🎬</div>
+            <div class="th-label">CAPTURA / VIDEO DEMO 2</div>
+          </div>
+        </div>
+        <div class="project-info">
+          <p class="project-type">Fuga detectada → sistema implementado</p>
+          <h3 class="project-title">Perdían clientes cada semana sin entender por qué.</h3>
+          <p class="project-desc">
+            El seguimiento post-turno no existía. Los clientes atendidos simplemente desaparecían. Sistema de reactivación activo: +40% de retención y 3x más reseñas orgánicas en 90 días.
+          </p>
+          <div class="project-chips">
+            <span class="project-chip">+40% retención</span>
+            <span class="project-chip">3x reseñas</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="project-card domino-item" style="--i:2">
+        <div class="project-thumb">
+          <div class="thumb-placeholder">
+            <div class="th-icon">🎬</div>
+            <div class="th-label">CAPTURA / VIDEO DEMO 3</div>
+          </div>
+        </div>
+        <div class="project-info">
+          <p class="project-type">Fuga detectada → sistema implementado</p>
+          <h3 class="project-title">Respondían cuando podían. El cliente ya se había ido.</h3>
+          <p class="project-desc">
+            El 60% de las consultas llegaban fuera del horario de atención y nadie respondía hasta el día siguiente. Sistema de conversación activo: respuesta en segundos, agenda en el mismo chat, sin intervención humana.
+          </p>
+          <div class="project-chips">
+            <span class="project-chip">Respuesta en segundos</span>
+            <span class="project-chip">0 leads perdidos</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="project-card domino-item" style="--i:3">
+        <div class="project-thumb">
+          <div class="thumb-placeholder">
+            <div class="th-icon">🎬</div>
+            <div class="th-label">CAPTURA / VIDEO DEMO 4</div>
+          </div>
+        </div>
+        <div class="project-info">
+          <p class="project-type">Fuga detectada → sistema implementado</p>
+          <h3 class="project-title">Tomaban decisiones sin datos reales. Todo dependía de la memoria del dueño.</h3>
+          <p class="project-desc">
+            Sin métricas claras, cada decisión era una suposición. Las fugas eran invisibles. Sistema de reportes implementado: qué clientes no volvieron, cuánto dinero se fue, dónde está el problema.
+          </p>
+          <div class="project-chips">
+            <span class="project-chip">Fugas visibles</span>
+            <span class="project-chip">Decisiones con datos</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="gradient-divider"></div>
+
+<!-- ====== TESTIMONIOS ====== -->
+<section id="testimonios">
+  <div class="section-inner">
+    <p class="section-tag fade-up">Lo que dicen</p>
+    <h2 class="section-title fade-up">El caos primero. <span>El sistema después.</span></h2>
+    <p class="section-sub fade-up" style="margin-bottom:2.5rem">
+      Testimonios reales. Sin editar. Con la frustración incluida.
+    </p>
+
+    <div class="testi-carousel-wrap fade-up">
+      <div class="testi-viewport">
+        <div class="testi-track" id="testi-track">
+
+          <div class="testi-card">
+            <div class="testi-quote">"</div>
+            <p class="testi-text">
+              Llegué a Calvin después de meses sintiéndome saturada. Contestaba mensajes a las 11 de la noche,
+              perdíamos turnos seguido, y no entendía por qué si trabajaba más que nunca los números no mejoraban.
+              Hoy el sistema hace todo eso solo — y yo por primera vez en años salgo a horario.
+            </p>
+            <div class="testi-footer">
+              <div class="testi-avatar">👩</div>
+              <div>
+                <p class="testi-name">Dra. Valentina Ríos</p>
+                <p class="testi-role">Odontóloga — Clínica Sonrisa</p>
+              </div>
+              <span class="testi-stars">★★★★★</span>
+            </div>
+          </div>
+
+          <div class="testi-card">
+            <div class="testi-quote">"</div>
+            <p class="testi-text">
+              Estaba agotado. Mi equipo me consultaba todo, cada proceso dependía de mí y cuando me
+              fui de vacaciones una semana el negocio casi se para. Calvin detectó en 30 minutos lo que yo
+              no había visto en años. Hoy el centro funciona aunque yo no esté — y eso vale más que cualquier campaña.
+            </p>
+            <div class="testi-footer">
+              <div class="testi-avatar">👨</div>
+              <div>
+                <p class="testi-name">Martín Aguirre</p>
+                <p class="testi-role">Director — Centro Estético Lumina</p>
+              </div>
+              <span class="testi-stars">★★★★★</span>
+            </div>
+          </div>
+
+          <div class="testi-card">
+            <div class="testi-quote">"</div>
+            <p class="testi-text">
+              Me di cuenta de que tenía clientes que venían una vez y desaparecían. Nunca los seguí,
+              nunca los contacté. Eso era dinero que se iba y yo ni lo contaba como pérdida.
+              Con el sistema de reactivación, en 90 días recuperé clientes que no venían hace más de un año.
+            </p>
+            <div class="testi-footer">
+              <div class="testi-avatar">👩</div>
+              <div>
+                <p class="testi-name">Sofía Medrano</p>
+                <p class="testi-role">Propietaria — Studio Glow</p>
+              </div>
+              <span class="testi-stars">★★★★★</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="testi-controls">
+        <button class="testi-arrow" id="testi-prev" aria-label="Anterior">←</button>
+        <div class="testi-dots" id="testi-dots">
+          <button class="testi-dot active"></button>
+          <button class="testi-dot"></button>
+          <button class="testi-dot"></button>
+        </div>
+        <button class="testi-arrow" id="testi-next" aria-label="Siguiente">→</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="gradient-divider"></div>
+
+<!-- ====== CONTACTO ====== -->
+<section id="contacto">
+  <div class="contact-inner">
+    <div class="fade-up">
+      <p class="section-tag">Hablemos</p>
+      <h2 class="section-title">¿Cuánto te está costando <span>no tener un sistema?</span></h2>
+      <p class="section-sub" style="margin-bottom:2rem">
+        En 30 minutos detectamos exactamente dónde tu negocio pierde clientes, dinero y
+        oportunidades — aunque parezca que todo funciona bien.
+      </p>
+
+      <div class="contact-item">
+        <div class="ci-icon">📧</div>
+        <span>Calvin@calvincyril.com</span>
+      </div>
+
+      <div class="calendly-box">
+        <h4>🔍 Diagnóstico de fugas — 30 minutos, sin costo</h4>
+        <p>
+          Analizamos en qué parte del proceso perdés clientes hoy y qué sistema cerraría esa fuga en la primera semana.
+        </p>
+        <a href="https://calendly.com/calvincyril" target="_blank" rel="noopener noreferrer" class="btn">
+          Detectar mis fugas →
+        </a>
+      </div>
+    </div>
+
+    <div class="fade-up">
+      <form class="contact-form" id="contact-form" onsubmit="handleSubmit(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="nombre">Nombre</label>
+            <input type="text" id="nombre" name="nombre" placeholder="Tu nombre" required />
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="tu@email.com" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="negocio">Tipo de negocio</label>
+          <select id="negocio" name="negocio" required>
+            <option value="" disabled selected>Seleccioná tu rubro</option>
+            <option value="clinica-odonto">Clínica odontológica</option>
+            <option value="estetica">Centro de estética</option>
+            <option value="clinica-medica">Clínica médica</option>
+            <option value="spa">Spa / bienestar</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="mensaje">¿Dónde sentís que más clientes o dinero se te escapa hoy?</label>
+          <textarea
+            id="mensaje"
+            name="mensaje"
+            placeholder="Ej: la agenda siempre tiene huecos, los clientes no vuelven, no llego a responder todos los mensajes, el negocio depende de que yo esté…"
+            required
+          ></textarea>
+        </div>
+
+        <div class="form-submit">
+          <button type="submit" class="btn" id="submit-btn">
+            <span>🚀</span> Enviar mensaje
+          </button>
+          <span class="form-note">Respondo en menos de 24 h</span>
+        </div>
+
+        <div id="form-feedback" style="display:none;margin-top:.8rem;padding:.75rem 1rem;border-radius:10px;font-family:'Inter',sans-serif;font-size:.88rem;"></div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ====== FOOTER ====== -->
+<footer>
+  <div class="footer-inner">
+    <span class="footer-logo">Calvin Cyril</span>
+    <p class="footer-copy">© 2024 Calvin Cyril · Todos los derechos reservados</p>
+    <div class="footer-socials">
+      <a href="#" class="social-btn" aria-label="LinkedIn">
+        <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      </a>
+      <a href="#" class="social-btn" aria-label="Instagram">
+        <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+      </a>
+      <a href="#" class="social-btn" aria-label="TikTok">
+        <svg viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+      </a>
+    </div>
+  </div>
+</footer>
+
+<!-- ====== WHATSAPP FLOAT ====== -->
+<a href="https://wa.me/TUNUMERO" class="wa-float" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+  <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+</a>
+
+<!-- ====== JS ====== -->
+<script>
+/* ===== PARTICLE CANVAS ===== */
+(function () {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+  const COLORS = ['#00f5ff','#7c3aed','#a855f7','#333399'];
+  const rand = (a,b) => Math.random()*(b-a)+a;
+  const pick = a => a[Math.floor(Math.random()*a.length)];
+
+  function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+
+  function init() {
+    particles = [];
+    const N = Math.floor(W*H/13000);
+    for(let i=0;i<N;i++) particles.push({
+      x:rand(0,W), y:rand(0,H),
+      vx:rand(-.15,.15), vy:rand(-.15,.15),
+      r:rand(1,2.2), color:pick(COLORS), a:rand(.15,.5)
+    });
+  }
+
+  function drawGrid() {
+    ctx.strokeStyle='rgba(255,255,255,.02)';ctx.lineWidth=1;
+    for(let x=0;x<W;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  }
+
+  function tick() {
+    ctx.clearRect(0,0,W,H);
+    drawGrid();
+    for(let i=0;i<particles.length;i++) {
+      for(let j=i+1;j<particles.length;j++) {
+        const dx=particles[i].x-particles[j].x, dy=particles[i].y-particles[j].y;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        if(d<110){
+          ctx.beginPath();
+          ctx.strokeStyle=`rgba(124,58,237,${.07*(1-d/110)})`;
+          ctx.lineWidth=.5;
+          ctx.moveTo(particles[i].x,particles[i].y);
+          ctx.lineTo(particles[j].x,particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+    particles.forEach(p => {
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0)p.x=W; if(p.x>W)p.x=0;
+      if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=p.color+Math.round(p.a*255).toString(16).padStart(2,'0');
+      ctx.fill();
+    });
+    requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('resize',()=>{ resize(); init(); });
+  resize(); init(); tick();
+})();
+
+/* ===== NAV ===== */
+const hamburger = document.getElementById('hamburger');
+const navLinks  = document.getElementById('nav-links');
+hamburger.addEventListener('click', () => navLinks.classList.toggle('open'));
+navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => navLinks.classList.remove('open')));
+
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').style.background =
+    window.scrollY > 50 ? 'rgba(10,10,15,.97)' : 'rgba(10,10,15,.75)';
+});
+
+/* ===== FADE-UP (non-card elements) ===== */
+const fuObs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); fuObs.unobserve(e.target); } });
+}, { threshold: .1 });
+document.querySelectorAll('.fade-up').forEach(el => fuObs.observe(el));
+
+/* ===== DOMINO ANIMATION ===== */
+function triggerDomino(grid) {
+  const items = grid.querySelectorAll('.domino-item');
+  items.forEach((item, i) => {
+    setTimeout(() => {
+      item.style.animationDelay = '0ms';
+      item.classList.add('dom-in');
+    }, i * 130);
+  });
+}
+
+const dominoGrids = [
+  document.getElementById('svc-grid'),
+  document.getElementById('port-grid'),
+];
+
+const domObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting) {
+      triggerDomino(e.target);
+      domObs.unobserve(e.target);
+    }
+  });
+}, { threshold: .08 });
+
+dominoGrids.forEach(g => { if(g) domObs.observe(g); });
+
+/* ===== TESTIMONIALS CAROUSEL ===== */
+const track  = document.getElementById('testi-track');
+const dots   = Array.from(document.querySelectorAll('.testi-dot'));
+const cards  = Array.from(track.querySelectorAll('.testi-card'));
+let current  = 0;
+let autoTimer;
+
+function goTo(idx) {
+  current = (idx + cards.length) % cards.length;
+  track.style.transform = `translateX(${-100 * current}%)`;
+  dots.forEach((d,i) => d.classList.toggle('active', i === current));
+}
+
+function startAuto() {
+  clearInterval(autoTimer);
+  autoTimer = setInterval(() => goTo(current + 1), 5500);
+}
+
+document.getElementById('testi-prev').addEventListener('click', () => { goTo(current-1); startAuto(); });
+document.getElementById('testi-next').addEventListener('click', () => { goTo(current+1); startAuto(); });
+dots.forEach((d,i) => d.addEventListener('click', () => { goTo(i); startAuto(); }));
+
+/* Touch swipe */
+let tsX = 0;
+track.addEventListener('touchstart', e => { tsX = e.touches[0].clientX; }, { passive:true });
+track.addEventListener('touchend', e => {
+  const dx = tsX - e.changedTouches[0].clientX;
+  if(Math.abs(dx) > 40) { goTo(current + (dx>0 ? 1 : -1)); startAuto(); }
+});
+
+startAuto();
+
+/* ===== STATS COUNTER ===== */
+function animateCounters() {
+  document.querySelectorAll('.stat-num').forEach(el => {
+    const raw = el.getAttribute('data-target');
+    if(!raw) return;
+    const target = parseFloat(raw);
+    const suffix = el.textContent.replace(/[\d.]/g,'');
+    let n = 0; const step = target/45;
+    const t = setInterval(() => {
+      n = Math.min(n+step, target);
+      el.textContent = (Number.isInteger(target) ? Math.floor(n) : n.toFixed(1)) + suffix;
+      if(n >= target) clearInterval(t);
+    }, 32);
+  });
+}
+const heroObs = new IntersectionObserver(e => {
+  if(e[0].isIntersecting){ animateCounters(); heroObs.disconnect(); }
+}, { threshold:.3 });
+heroObs.observe(document.getElementById('hero'));
+
+/* ===== FORM ===== */
+function handleSubmit(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  const fb  = document.getElementById('form-feedback');
+  const form = document.getElementById('contact-form');
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳</span> Enviando…';
+  setTimeout(() => {
+    fb.style.cssText = 'display:block;background:rgba(0,245,255,.07);border:1px solid rgba(0,245,255,.25);color:#00f5ff;';
+    fb.textContent = '✅ ¡Listo! Me contactaré con vos en menos de 24 horas.';
+    btn.innerHTML = '<span>✅</span> Mensaje enviado';
+    form.reset();
+    setTimeout(() => { btn.disabled=false; btn.innerHTML='<span>🚀</span> Enviar mensaje'; }, 4500);
+  }, 1400);
+}
+</script>
+</body>
+</html>
