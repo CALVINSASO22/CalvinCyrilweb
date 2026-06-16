@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#14213d">
+    <title>Calvin Cyril</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="Navegacion principal">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div>
+            <p class="eyebrow">Panel personal</p>
+            <h1>Calvin Cyril</h1>
+          </div>
+        </div>
+
+        <nav class="tabs" aria-label="Secciones">
+          <button class="tab is-active" data-tab="today" type="button">Hoy</button>
+          <button class="tab" data-tab="habits" type="button">Habitos</button>
+          <button class="tab" data-tab="schedule" type="button">Agenda</button>
+          <button class="tab" data-tab="finance" type="button">Finanzas</button>
+        </nav>
+
+        <section class="notification-panel">
+          <p class="panel-title">Notificaciones</p>
+          <p id="notificationText">Activa recordatorios para recibir avisos mientras la app este abierta.</p>
+          <button id="enableNotifications" class="primary-button" type="button">Activar avisos</button>
+        </section>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="currentDate"></p>
+            <h2 id="sectionTitle">Hoy</h2>
+          </div>
+          <div class="score-card">
+            <span id="completionScore">0%</span>
+            <small>avance del dia</small>
+          </div>
+        </header>
+
+        <section class="view is-visible" id="todayView" data-view="today">
+          <div class="summary-grid">
+            <article>
+              <span id="habitDoneCount">0/0</span>
+              <p>habitos cumplidos</p>
+            </article>
+            <article>
+              <span id="activityTodayCount">0</span>
+              <p>actividades para hoy</p>
+            </article>
+            <article>
+              <span id="financeBalance">$0</span>
+              <p>balance registrado</p>
+            </article>
+          </div>
+
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-heading">
+                <h3>Checklist de hoy</h3>
+                <button class="ghost-button" data-jump="habits" type="button">Editar</button>
+              </div>
+              <div id="todayHabits" class="list empty-aware"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-heading">
+                <h3>Proximas actividades</h3>
+                <button class="ghost-button" data-jump="schedule" type="button">Agregar</button>
+              </div>
+              <div id="todayActivities" class="list empty-aware"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="habitsView" data-view="habits">
+          <form id="habitForm" class="form-row">
+            <label>
+              Habito
+              <input id="habitName" type="text" placeholder="Ej: Leer 20 minutos" required>
+            </label>
+            <label>
+              Frecuencia
+              <select id="habitFrequency">
+                <option value="daily">Diario</option>
+                <option value="weekdays">Lunes a viernes</option>
+                <option value="custom">Personal</option>
+              </select>
+            </label>
+            <button class="primary-button" type="submit">Agregar</button>
+          </form>
+          <section class="panel">
+            <div class="panel-heading">
+              <h3>Mis habitos</h3>
+              <button id="resetToday" class="ghost-button" type="button">Limpiar checks de hoy</button>
+            </div>
+            <div id="habitList" class="list empty-aware"></div>
+          </section>
+        </section>
+
+        <section class="view" id="scheduleView" data-view="schedule">
+          <form id="activityForm" class="form-grid">
+            <label>
+              Actividad
+              <input id="activityName" type="text" placeholder="Ej: Entrenar" required>
+            </label>
+            <label>
+              Fecha
+              <input id="activityDate" type="date" required>
+            </label>
+            <label>
+              Hora
+              <input id="activityTime" type="time" required>
+            </label>
+            <label>
+              Avisarme
+              <select id="activityReminder">
+                <option value="0">A la hora exacta</option>
+                <option value="5">5 min antes</option>
+                <option value="15">15 min antes</option>
+                <option value="30">30 min antes</option>
+              </select>
+            </label>
+            <button class="primary-button" type="submit">Guardar actividad</button>
+          </form>
+          <section class="panel">
+            <div class="panel-heading">
+              <h3>Agenda</h3>
+              <div class="panel-actions">
+                <button id="exportCalendar" class="ghost-button" type="button">Exportar calendario</button>
+                <button id="clearPastActivities" class="ghost-button" type="button">Quitar pasadas</button>
+              </div>
+            </div>
+            <div id="activityList" class="list empty-aware"></div>
+          </section>
+        </section>
+
+        <section class="view" id="financeView" data-view="finance">
+          <form id="financeForm" class="form-grid">
+            <label>
+              Concepto
+              <input id="financeName" type="text" placeholder="Ej: Sueldo, alquiler, comida" required>
+            </label>
+            <label>
+              Tipo
+              <select id="financeType">
+                <option value="income">Ingreso</option>
+                <option value="expense">Gasto</option>
+              </select>
+            </label>
+            <label>
+              Moneda
+              <select id="financeCurrency">
+                <option value="UYU">UYU</option>
+                <option value="USD">USD</option>
+              </select>
+            </label>
+            <label>
+              Monto
+              <input id="financeAmount" type="number" min="0" step="0.01" placeholder="0.00" required>
+            </label>
+            <button class="primary-button" type="submit">Registrar</button>
+          </form>
+
+          <div class="summary-grid">
+            <article>
+              <span id="uyuBalance">$0</span>
+              <p>balance UYU</p>
+            </article>
+            <article>
+              <span id="usdBalance">US$0</span>
+              <p>balance USD</p>
+            </article>
+            <article>
+              <span id="expenseCount">0</span>
+              <p>gastos cargados</p>
+            </article>
+          </div>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <h3>Movimientos</h3>
+              <button id="clearFinance" class="ghost-button" type="button">Vaciar finanzas</button>
+            </div>
+            <div id="financeList" class="list empty-aware"></div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <template id="emptyTemplate">
+      <div class="empty-state">Todavia no hay datos en esta seccion.</div>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
